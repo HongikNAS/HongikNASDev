@@ -1,82 +1,114 @@
 package kr.ac.hongik.nas.ftpserver;
 
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Vector;
 
 /**
  * 
  * @author Arubirate
  *
  */
-public class FtpServer implements Runnable {
+public class FtpServer {
 
-	boolean isRun;
-	Socket connection;
-	ServerSocket server;
-	final int debug = 1;
+	private Socket connection;
+	private ServerSocket serverSocket;
 
-	FtpConnection[] ftpConnState;
-	private FtpConfig config;
+	private FtpConnection[] connectionSlot;
+	private FtpConfig ftpConfig;
 
-	// FtpConfig
-	// Connection Limit ����
-	// Server Port ����
-
-	public FtpServer() {
-		config = new FtpConfig(); // read config;
-		ftpConnState = new FtpConnection[config.getConnectionLimit()];
-		try {
-			server = new ServerSocket(config.getPort());
-		} catch (Exception e) {
-			System.err.println("SERVER PORT IS NOT SET");
-			System.err.println(e);
-			System.exit(1); // TODO should remove
+	public FtpServer(FtpConfig ftpConfig) {
+		this.ftpConfig = ftpConfig;
+	}
+	
+	public void start() {
+		connectionSlot = new FtpConnection[ftpConfig.getConnectionLimit()];
+		serverSocket = createServerSocket(ftpConfig.getPort());
+		
+		if(serverSocket == null){
+			//TODO : need to error log management class
+			System.err.println("ERROR : Server initalization is fail (cannot bind port)");
+			return;
 		}
-	}
-
-	public boolean running() {
-		return isRun;
-	}
-
-	public static void main(String[] args) {
-		FtpServer ftpServer = new FtpServer();
-		Thread serverThread = new Thread(ftpServer);
-		serverThread.start();
-	}
-
-	public void run() {
-		// TODO Auto-generated method stub
-		isRun = true;
+		
 		System.out.println("FTP Server by HongikNAS");
-		while (running()) {
-			boolean isConnected = false;
+		
+		while (true) {
 			try {
-				connection = server.accept();
-				if (debug == 1)
-					System.out.println("FTP CONNECTION REQUEST");
+				connection = serverSocket.accept();
 				
-				//TODO define findEmptyConnect()
-				for (int j = 0; j < config.getConnectionLimit(); j++) {
-
-					if (ftpConnState[j] == null || ftpConnState[j].isRun() == false) {
-						
-						ftpConnState[j] = new FtpConnection(connection, config.getRootPath());
-						ftpConnState[j].start(true);
-						isConnected = true;
-						break;
-					}
-				}
-				if (isConnected == false) {
+				System.out.println("FTP CONNECTION REQUEST");
+				System.out.println(connection.getRemoteSocketAddress());
+				
+				int slotIndex = findEmptyConnectionSlotIndex();
+				if(slotIndex == -1){
+					//TODO :  need to error log management class
 					System.err.println("Error : Too many Connection");
-					FtpConnection ftpTemp = new FtpConnection(connection, config.getRootPath());
-					ftpTemp.start(false); // just send 221 code
+					connectDeny();
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.out.println("FTP SERVER IS GONE");
-				// TODO request remove
-				System.exit(1);
+				addSlot(slotIndex);
+			} catch (IOException e1) {
+				//TODO : need to error log management class
+				System.err.println("ERROR : FTP SERVER IS GONE");
+				return;
 			}
 		}
+	}
+	
+	/**
+	 * Find empty slot from connectionSlot
+	 * If connectionSlot[index] is null or state is "run", slot is empty.
+	 * 
+	 * @return int
+	 */
+	private int findEmptyConnectionSlotIndex(){
+		int emptyIndex = -1;
+		
+		for (int i = 0; i < connectionSlot.length; i++) {
+			if (connectionSlot[i] == null || connectionSlot[i].isRun() == false) {
+				emptyIndex = i;
+				break;
+			}
+		}
+		
+		return emptyIndex;
+	}
+	
+	/**
+	 * Add Connection to connectionSlot
+	 * 
+	 * @param slotIndex
+	 */
+	private void addSlot(int slotIndex){
+		connectionSlot[slotIndex] = new FtpConnection(connection, ftpConfig.getRootPath());
+		connectionSlot[slotIndex].start(true);
+	}
+	
+	/**
+	 * If you need to deny connection request, use this function.
+	 */
+	private void connectDeny(){
+		FtpConnection ftpTemp = new FtpConnection(connection, ftpConfig.getRootPath());
+		ftpTemp.start(false); // just send 221 code
+	}
+	
+	/**
+	 * Create Server Socket
+	 * If failure of creation, return null.
+	 * 
+	 * @param port
+	 * @return ServerSocket 
+	 */
+	private ServerSocket createServerSocket(int port){
+		ServerSocket serverSocket = null;
+		
+		try {
+			serverSocket = new ServerSocket(port);
+		} catch (IOException e) {
+			//do nothing
+		}
+		
+		return serverSocket;
 	}
 }

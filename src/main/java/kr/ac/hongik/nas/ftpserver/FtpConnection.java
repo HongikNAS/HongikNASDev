@@ -160,7 +160,6 @@ public class FtpConnection implements Runnable {
 				recMessage = inflow.readLine();
 				printReceviceMessage(recMessage);
 				FtpCommand.analyzer(recMessage, this);
-
 			} catch (CommandNullException e) {
 				output("421 No Command - Connection Close");
 				System.out.println("No Command");
