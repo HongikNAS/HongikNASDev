@@ -162,7 +162,7 @@ public class FtpConnection implements Runnable {
 			deny("Unknown Error");
 		}
 		
-		while (isRun()) {
+		while (isRun() ) {
 			try {
 				System.out.println("Waiting For Message");
 				receiveMessage = inflow.readLine();
