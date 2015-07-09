@@ -10,39 +10,54 @@ import java.net.Socket;
 import kr.ac.hongik.nas.ftpserver.command.*;
 import kr.ac.hongik.nas.ftpserver.exception.CommandNullException;
 import kr.ac.hongik.nas.ftpserver.util.Login;
-
+/**
+ * 
+ * @author arubirate
+ *
+ */
 public class FtpConnection implements Runnable {
+	
 	public final static int NOT_EXIST_CONNECTED_SOCKET = 0;
-
+	private final String ROOTPATH; // never changed
+	
 	private Socket incoming;
 	private Login account;
 	private PrintWriter outflow;
 	private BufferedReader inflow;
-	private boolean isRunning;
-	private final int debug = 1;
+	private boolean running;
+	private final boolean debug = true;
 
 	private Socket dataClientSocket;
 	private String dataClientAddress;
 	private Integer dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
 
-	private final String ROOTPATH; // never changed
 	private String currentPath;
 
 	/*
-	 * public FtpConnection(Socket i) {
-	 * 
-	 * System.out.println("Conn Setting Up"); incoming = i;
-	 * System.out.println("Conn Set up Done"); }
+	 * Constructor
 	 */
-
 	public FtpConnection(Socket i, String rPATH) {
 
+		running = true;
 		incoming = i;
 		account = new Login();
 		ROOTPATH = rPATH; // root PATH
+		
+		try {
+			outflow = new PrintWriter(new OutputStreamWriter(
+					incoming.getOutputStream()), true);
+			inflow = new BufferedReader(new InputStreamReader(
+					incoming.getInputStream())); 
+		} catch (Exception e) {
+			System.err.println("Stream ERROR");
+			running = false;
+		}
 	}
 
-	/******* setter and getter *******/
+	/*
+	 * Make DataSocket, and return DataSocket.
+	 * if it is existed, return null;
+	 */
 	public Socket getDataSocket() {
 		// TODO check passive mode
 
@@ -61,11 +76,16 @@ public class FtpConnection implements Runnable {
 		}
 		return null;
 	}
-
+	/*
+	 * set DataSocketPort
+	 */
 	public void setDataClientPort(Integer port) {
 		dataClientPort = port;
 	}
 
+	/*
+	 * get DataSocketPort
+	 */
 	public int getDataClientPort() {
 		return dataClientPort.intValue();
 	}
@@ -95,7 +115,7 @@ public class FtpConnection implements Runnable {
 	}
 
 	public boolean isRun() {
-		return isRunning;
+		return running;
 	}
 
 	/******* end of setter and getter *******/
@@ -110,7 +130,8 @@ public class FtpConnection implements Runnable {
 	}
 
 	public void connectionClose() {
-		isRunning = false;
+		running = false;
+		dataSocketClose();
 	}
 
 	public void dataSocketClose() {
@@ -120,50 +141,39 @@ public class FtpConnection implements Runnable {
 	}
 
 	public void printReceviceMessage(String str) {
-		if (debug == 1)
+		if (debug)
 			System.out.println(str);
 	}
 
-	public void start(boolean isConnect) {
-		try {
-			outflow = new PrintWriter(new OutputStreamWriter(
-					incoming.getOutputStream()), true);
-			inflow = new BufferedReader(new InputStreamReader(
-					incoming.getInputStream())); // BufferedReader?
-		} catch (Exception e) {
 
-			System.err.println("Stream ERROR");
-		}
-
-		System.out.println("FTP CONNECTION ESTABLISHED");
-		output("220 (login HongikNAS)"); // connection established
-		System.out.println(isConnect);
-		if (isConnect) { // true
-
-			isRunning = true;
-			new Thread(this).start();
-		} else {
-			output("221 Too Many User");
-			System.err.println("Too many user");
-			//TODO remove
-			System.exit(1);
-		}
+	public void deny(String reason) {
+		
+		output("221 " + reason);
+		System.err.println(reason);
 	}
-
 	public void run() {
 
-		String recMessage;
-		// control channel
+		String receiveMessage;
+
+		if( isRun() ) {
+			System.out.println("FTP CONNECTION ESTABLISHED");
+			output("220 (login HongikNAS)"); // connection established
+		} else {
+			deny("Unknown Error");
+		}
+		
 		while (isRun()) {
 			try {
 				System.out.println("Waiting For Message");
-				recMessage = inflow.readLine();
-				printReceviceMessage(recMessage);
-				FtpCommand.analyzer(recMessage, this);
+				receiveMessage = inflow.readLine();
+				printReceviceMessage(receiveMessage);
+				FtpCommand.analyzer(receiveMessage, this);
+			
 			} catch (CommandNullException e) {
 				output("421 No Command - Connection Close");
 				System.out.println("No Command");
 				connectionClose();
+			
 			} catch (Exception e) {
 
 				output("421 Unknown Error Occured");
@@ -174,24 +184,3 @@ public class FtpConnection implements Runnable {
 	}
 }
 
-/*
- * public boolean ftpLogin() {
- * 
- * String recMessage;// , id, password; // id = password = ""; try { recMessage
- * = inflow.readLine(); printRecMessage(recMessage);
- * FtpCommand.analyzer(recMessage, this); // System.out.println(id);
- * 
- * output("331 Please specify the password"); recMessage = inflow.readLine();
- * printRecMessage(recMessage); FtpCommand.analyzer(recMessage, this); //
- * System.out.println(password);
- * 
- * } catch (IOException e) { // IOException??
- * 
- * output("530 user information not come properly"); connectionClose(); return
- * false; } // read id and password
- * 
- * if (account.isAuthorized()) { output("230 User logged in"); return true; }
- * else { output("530 Login incorrect"); return false; }
- * 
- * }
- */
