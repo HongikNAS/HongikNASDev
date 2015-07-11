@@ -3,7 +3,7 @@ package kr.ac.hongik.nas.ftpserver;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Vector;
+//import java.util.Vector;
 
 /**
  * 
@@ -15,7 +15,7 @@ public class FtpServer {
 	private Socket connection;
 	private ServerSocket serverSocket;
 
-	private FtpConnection[] connectionSlot;
+	private Thread[] connectionSlot;
 	private FtpConfig ftpConfig;
 
 	public FtpServer(FtpConfig ftpConfig) {
@@ -23,7 +23,8 @@ public class FtpServer {
 	}
 	
 	public void start() {
-		connectionSlot = new FtpConnection[ftpConfig.getConnectionLimit()];
+		
+		connectionSlot = new Thread[ftpConfig.getConnectionLimit()];
 		serverSocket = createServerSocket(ftpConfig.getPort());
 		
 		if(serverSocket == null){
@@ -47,7 +48,10 @@ public class FtpServer {
 					System.err.println("Error : Too many Connection");
 					connectDeny();
 				}
-				addSlot(slotIndex);
+				else {
+					addSlot(slotIndex);
+				}
+			
 			} catch (IOException e1) {
 				//TODO : need to error log management class
 				System.err.println("ERROR : FTP SERVER IS GONE");
@@ -66,7 +70,7 @@ public class FtpServer {
 		int emptyIndex = -1;
 		
 		for (int i = 0; i < connectionSlot.length; i++) {
-			if (connectionSlot[i] == null || connectionSlot[i].isRun() == false) {
+			if (connectionSlot[i] == null || connectionSlot[i].isAlive() == false) {
 				emptyIndex = i;
 				break;
 			}
@@ -81,16 +85,17 @@ public class FtpServer {
 	 * @param slotIndex
 	 */
 	private void addSlot(int slotIndex){
-		connectionSlot[slotIndex] = new FtpConnection(connection, ftpConfig.getRootPath());
-		connectionSlot[slotIndex].start(true);
+		FtpConnection newConnection = new FtpConnection(connection, ftpConfig.getRootPath());
+		connectionSlot[slotIndex] = new Thread(newConnection);
+		connectionSlot[slotIndex].start();
 	}
 	
 	/**
 	 * If you need to deny connection request, use this function.
 	 */
 	private void connectDeny(){
-		FtpConnection ftpTemp = new FtpConnection(connection, ftpConfig.getRootPath());
-		ftpTemp.start(false); // just send 221 code
+		FtpConnection newConnection = new FtpConnection(connection, ftpConfig.getRootPath());
+		newConnection.deny("Too many User"); // just send 221 code
 	}
 	
 	/**
@@ -108,7 +113,6 @@ public class FtpServer {
 		} catch (IOException e) {
 			//do nothing
 		}
-		
 		return serverSocket;
 	}
 }
