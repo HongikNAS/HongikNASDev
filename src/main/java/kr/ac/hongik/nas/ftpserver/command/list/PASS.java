@@ -15,12 +15,13 @@ public class PASS extends COMM {
 		
 		if (account.isAuthorized()) {
 			conn.output("230 User logged in");
-			conn.setCurrentPath( account.getUser() ); // check whether Directory exist
+			
+			//TODO : 나중에 이동해야함
+			conn.setCurrentPath( File.separator+account.getUser() ); // check whether Directory exist
 			
 			String path = conn.getRootPath() + conn.getCurrentPath();
 			File dir = new File(path);
 			if( dir.isDirectory() == false ) {
-				
 				dir.mkdirs(); // if user folder is not exist, then make it
 			}
 			

@@ -27,6 +27,7 @@ public class LIST extends COMM{
 		} catch (Exception e) {
 			System.err.println("DataConnectionStream ERROR");
 			conn.output("425 Can't open data Connection");
+			return;
 		}
 		path = conn.getRootPath()+conn.getCurrentPath();
 		try { 

@@ -42,7 +42,7 @@ public class FtpConnection implements Runnable {
 		incoming = i;
 		account = new Login();
 		ROOTPATH = rPATH; // root PATH
-		
+		dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
 		try {
 			outflow = new PrintWriter(new OutputStreamWriter(
 					incoming.getOutputStream()), true);
@@ -61,6 +61,7 @@ public class FtpConnection implements Runnable {
 	public Socket getDataSocket() {
 		// TODO check passive mode
 
+		System.out.println(dataClientPort);
 		if (dataClientPort != NOT_EXIST_CONNECTED_SOCKET) { // Port is set
 
 			try {
@@ -74,6 +75,7 @@ public class FtpConnection implements Runnable {
 
 			return dataClientSocket;
 		}
+		
 		return null;
 	}
 	/*

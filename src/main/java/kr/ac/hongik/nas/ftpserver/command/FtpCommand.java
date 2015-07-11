@@ -23,6 +23,7 @@ public class FtpCommand {
 		CommandList.put("QUIT", new QUIT());
 		CommandList.put("PORT", new PORT());
 		CommandList.put("LIST", new LIST());
+		CommandList.put("PWD", new PWD());
 		CommandList.put("UNKNOWN", new Unknown());
 	}
 
@@ -38,7 +39,6 @@ public class FtpCommand {
 			if( st.hasMoreTokens() )
 				inData = st.nextToken();
 		}
-		
 		// Should check login Option
 		
 		if( funcName != "" ) {
