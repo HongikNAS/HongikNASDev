@@ -3,3 +3,5 @@ create database hongikNAS
 create table IDENTITY (
 	user CHAR(16) PRIMARY KEY,
 	password CHAR(16) NOT NULL )
+	
+Insert into IDENTITY (user, password) values("root","1234");
