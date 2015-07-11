@@ -154,7 +154,7 @@ public class FtpConnection implements Runnable {
 	public void run() {
 
 		String receiveMessage;
-
+		
 		if( isRun() ) {
 			System.out.println("FTP CONNECTION ESTABLISHED");
 			output("220 (login HongikNAS)"); // connection established
