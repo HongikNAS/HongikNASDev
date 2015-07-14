@@ -14,7 +14,7 @@ public class PASS extends COMM {
 		account.setPass(in);
 		
 		if (account.isAuthorized()) {
-			conn.output("230 User logged in");
+			conn.controlConnOutput("230 User logged in");
 			
 			//TODO : 나중에 이동해야함
 			conn.setCurrentPath( File.separator+account.getUser() ); // check whether Directory exist
@@ -26,7 +26,7 @@ public class PASS extends COMM {
 			}
 			
 		} else {
-			conn.output("530 Login incorrect");
+			conn.controlConnOutput("530 Login incorrect");
 		}
 	}
 }

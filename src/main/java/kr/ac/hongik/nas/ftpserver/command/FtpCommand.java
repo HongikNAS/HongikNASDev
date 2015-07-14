@@ -48,7 +48,7 @@ public class FtpCommand {
 			try { 
 				func.excute(conn, inData);
 			} catch(CommandSyntaxException e) {
-				conn.output(e.errorMessage());
+				conn.controlConnOutput(e.errorMessage());
 			}
 			
 		}else {

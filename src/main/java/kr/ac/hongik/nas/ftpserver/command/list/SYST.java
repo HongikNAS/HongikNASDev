@@ -9,7 +9,7 @@ public class SYST extends COMM{
 		
 		//if( in != "" ) suspicious data 
 		
-		//conn.output("215 UNIX Type: L8"); // Just Send it..(now.)
-		conn.output("215 UNIX Type"); 
+		//conn.controlConnOutput("215 UNIX Type: L8"); // Just Send it..(now.)
+		conn.controlConnOutput("215 UNIX Type"); 
 	}
 }

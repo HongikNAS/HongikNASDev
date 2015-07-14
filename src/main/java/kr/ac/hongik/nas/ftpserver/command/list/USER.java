@@ -11,6 +11,6 @@ public class USER extends COMM {
 			throws CommandSyntaxException {
 		// if( in == "" || in == null ) No input
 		conn.getAccount().setUser(in);
-		conn.output("331 Please Specified Password"); // Sending Message
+		conn.controlConnOutput("331 Please Specified Password"); // Sending Message
 	}
 }

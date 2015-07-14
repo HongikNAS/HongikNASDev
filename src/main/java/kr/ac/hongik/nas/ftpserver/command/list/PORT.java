@@ -33,6 +33,6 @@ public class PORT extends COMM {
 		conn.setDataClientAddress(ipAddress);
 		conn.setDataClientPort(port);
 		
-		conn.output("200 Port Setting Complete");
+		conn.controlConnOutput("200 Port Setting Complete");
 	}
 }

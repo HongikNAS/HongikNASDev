@@ -6,10 +6,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
-
 import kr.ac.hongik.nas.ftpserver.command.*;
 import kr.ac.hongik.nas.ftpserver.exception.CommandNullException;
 import kr.ac.hongik.nas.ftpserver.util.Login;
+import kr.ac.hongik.nas.HongikFtpServer; // check for HongikFtpServer.isDebugMode
 /**
  * 
  * @author arubirate
@@ -18,42 +18,75 @@ import kr.ac.hongik.nas.ftpserver.util.Login;
 public class FtpConnection implements Runnable {
 	
 	public final static int NOT_EXIST_CONNECTED_SOCKET = 0;
-	private final String ROOTPATH; // never changed
 	
-	private Socket incoming;
+	private final String ROOTPATH; // never changed
+	private String currentPath;
+	
+	private Socket controlConnection;
+	private PrintWriter controlConnOutstream;
+	private BufferedReader controlConnInstream;
+	
 	private Login account;
-	private PrintWriter outflow;
-	private BufferedReader inflow;
 	private boolean running;
-	private final boolean debug = true;
 
 	private Socket dataClientSocket;
 	private String dataClientAddress;
 	private Integer dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
 
-	private String currentPath;
 
-	/*
+	/**
 	 * Constructor
-	 */
+	 * @param Socket, rPATH
+	 **/
 	public FtpConnection(Socket i, String rPATH) {
 
-		running = true;
-		incoming = i;
+		controlConnection = i;
 		account = new Login();
 		ROOTPATH = rPATH; // root PATH
 		dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
-		try {
-			outflow = new PrintWriter(new OutputStreamWriter(
-					incoming.getOutputStream()), true);
-			inflow = new BufferedReader(new InputStreamReader(
-					incoming.getInputStream())); 
-		} catch (Exception e) {
-			System.err.println("Stream ERROR");
+		
+		if ( setControlConnOutstream(controlConnection) && 
+				setControlConnInstream(controlConnection) ) {
+			running = true;
+		} else {
+			if( HongikFtpServer.isDebugMode )
+				System.err.println("FtpConnection ERROR : Get Stream");
 			running = false;
 		}
 	}
 
+	/**
+	 * get controlConnOutstream
+	 * @param Socket
+	 * @return boolean
+	 */
+	public boolean setControlConnOutstream(Socket controlConn) {
+		
+		try { 
+			controlConnOutstream = new PrintWriter(new OutputStreamWriter(
+					controlConn.getOutputStream()), true);
+		} catch(Exception e) {
+			return false;
+		}
+		return true;
+	}
+	/**
+	 * get controlConnInstream
+	 * @param controlConn
+	 * @return boolean
+	 */
+	public boolean setControlConnInstream(Socket controlConn) {
+		
+		try {
+			controlConnInstream = new BufferedReader(new InputStreamReader(
+					controlConn.getInputStream())); 
+		} catch(Exception e) {
+			return false;
+		}
+		return true;
+	}
+	
+	
 	/*
 	 * Make DataSocket, and return DataSocket.
 	 * if it is existed, return null;
@@ -78,8 +111,9 @@ public class FtpConnection implements Runnable {
 		
 		return null;
 	}
-	/*
+	/**
 	 * set DataSocketPort
+	 * @param Integer port
 	 */
 	public void setDataClientPort(Integer port) {
 		dataClientPort = port;
@@ -116,24 +150,59 @@ public class FtpConnection implements Runnable {
 		return account;
 	}
 
-	public boolean isRun() {
+	public boolean getRunning() {
 		return running;
 	}
 
 	/******* end of setter and getter *******/
 
-	public void output(String out) {
+	/**
+	 * controlConnOutput
+	 * Send server code by controlConnectionOutstream
+	 * @param out
+	 */
+	public void controlConnOutput(String message) {
 		try {
-			outflow.println(out);
-			System.out.println("Send to Cient -> " + out);
+			
+			controlConnOutstream.println(message);
+			if( HongikFtpServer.isDebugMode )
+				System.out.println("Send to Cient -> " + message);
 		} catch (Exception e) {
-			System.out.println("Error printing to outflow");
+			
+			if( HongikFtpServer.isDebugMode )
+				System.err.println("Error printing to controlConnOutstream");
+		}
+	}
+	/**
+	 * controlConnInput 
+	 * Read code send by client from controlConnectionInstream
+	 * @return String
+	 * @exception IOException();
+	 */
+	public String controlConnInput() throws IOException {
+		
+		try { 
+			String message = controlConnInstream.readLine();
+			return message;
+		} catch(Exception e) {
+			throw new IOException();
 		}
 	}
 
+	
 	public void connectionClose() {
 		running = false;
 		dataSocketClose();
+		
+		try { 
+			controlConnOutstream.close();
+			controlConnInstream.close();
+			controlConnection.close();
+		} catch( IOException e ) {
+			
+			if( HongikFtpServer.isDebugMode ) 
+				System.err.println("FtpConnection ERROR : Unable to close controlConnection");
+		}
 	}
 
 	public void dataSocketClose() {
@@ -143,43 +212,59 @@ public class FtpConnection implements Runnable {
 	}
 
 	public void printReceviceMessage(String str) {
-		if (debug)
-			System.out.println(str);
+		System.out.println(str);
 	}
 
 
-	public void deny(String reason) {
+	public void connectionDeny(String reason) {
 		
-		output("221 " + reason);
-		System.err.println(reason);
+		controlConnOutput("221 " + reason);
+		if( HongikFtpServer.isDebugMode ) 
+			System.err.println(reason);
 	}
 	public void run() {
 
 		String receiveMessage;
 		
-		if( isRun() ) {
-			System.out.println("FTP CONNECTION ESTABLISHED");
-			output("220 (login HongikNAS)"); // connection established
+		if( getRunning() ) {
+			if( HongikFtpServer.isDebugMode ) 
+				System.out.println("FtpConnection Msg : Connection Established");
+			controlConnOutput("220 (login HongikNAS)"); // connection established
 		} else {
-			deny("Unknown Error");
+			connectionDeny("Unknown Error");
+			connectionClose();
 		}
 		
-		while (isRun() ) {
+		while ( getRunning() ) {
 			try {
-				System.out.println("Waiting For Message");
-				receiveMessage = inflow.readLine();
-				printReceviceMessage(receiveMessage);
+				if( HongikFtpServer.isDebugMode ) 
+					System.out.println("Waiting For Message");
+				
+				receiveMessage = controlConnInput();
+				
+				if ( HongikFtpServer.isDebugMode ) 
+					printReceviceMessage(receiveMessage);
+				
 				FtpCommand.analyzer(receiveMessage, this);
 			
+			} catch(IOException e) {
+				
+				controlConnOutput("421 Read null Command - Connection Close");
+				if( HongikFtpServer.isDebugMode )
+					System.err.println("FtpConnection ERROR : Read Null Message");
+				connectionClose();
+				
 			} catch (CommandNullException e) {
-				output("421 No Command - Connection Close");
-				System.out.println("No Command");
+				controlConnOutput("421 No Command - Connection Close");
+				if( HongikFtpServer.isDebugMode ) 
+					System.err.println("FtpConnection ERROR : No Command");
 				connectionClose();
 			
 			} catch (Exception e) {
 
-				output("421 Unknown Error Occured");
-				System.out.println("ERROR");
+				controlConnOutput("421 Unknown Error Occured");
+				if( HongikFtpServer.isDebugMode ) 
+					System.err.println("FtpConnection ERROR : Unknown ERROR");
 				connectionClose();
 			}
 		}

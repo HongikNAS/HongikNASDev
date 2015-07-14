@@ -16,17 +16,17 @@ public class LIST extends COMM{
 		String path, out="";
 		if( dataSocket == null ) {
 			System.err.println("Data Socket is NULL");
-			conn.output("425 Can't open data Connection");
+			conn.controlConnOutput("425 Can't open data Connection");
 			return;
 		}
-		conn.output("150 data connection for LIST Command");
+		conn.controlConnOutput("150 data connection for LIST Command");
 		
 		try {
 			dataOutFlow = new OutputStreamWriter(
 					dataSocket.getOutputStream());
 		} catch (Exception e) {
 			System.err.println("DataConnectionStream ERROR");
-			conn.output("425 Can't open data Connection");
+			conn.controlConnOutput("425 Can't open data Connection");
 			return;
 		}
 		path = conn.getRootPath()+conn.getCurrentPath();
@@ -48,10 +48,10 @@ public class LIST extends COMM{
 		}
 		conn.dataSocketClose();
 		
-		conn.output("226 LIST transfer complete");
+		conn.controlConnOutput("226 LIST transfer complete");
 	}
 	
-	/*public void output(String out) {
+	/*public void controlConnOutput(String out) {
 		try {
 			dataOutFlow.println(out);
 			//System.out.println("Send to Cient -> " + out);

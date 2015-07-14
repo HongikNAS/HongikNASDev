@@ -95,7 +95,7 @@ public class FtpServer {
 	 */
 	private void connectDeny(){
 		FtpConnection newConnection = new FtpConnection(connection, ftpConfig.getRootPath());
-		newConnection.deny("Too many User"); // just send 221 code
+		newConnection.connectionDeny("Too many User"); // just send 221 code
 	}
 	
 	/**
