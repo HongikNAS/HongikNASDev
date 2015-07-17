@@ -17,8 +17,6 @@ import kr.ac.hongik.nas.HongikFtpServer; // check for HongikFtpServer.isDebugMod
  */
 public class FtpConnection implements Runnable {
 	
-	public final static int NOT_EXIST_CONNECTED_SOCKET = 0;
-	
 	private final String ROOTPATH; // never changed
 	private String currentPath;
 	
@@ -29,11 +27,8 @@ public class FtpConnection implements Runnable {
 	private Login account;
 	private boolean running;
 
-	private Socket dataClientSocket;
-	private String dataClientAddress;
-	private Integer dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
-
-
+	private FtpDataConnection dataConn;
+	
 	/**
 	 * Constructor
 	 * @param Socket, rPATH
@@ -43,7 +38,7 @@ public class FtpConnection implements Runnable {
 		controlConnection = i;
 		account = new Login();
 		ROOTPATH = rPATH; // root PATH
-		dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
+		dataConn = new FtpDataConnection();
 		
 		if ( setControlConnOutstream(controlConnection) && 
 				setControlConnInstream(controlConnection) ) {
@@ -86,54 +81,10 @@ public class FtpConnection implements Runnable {
 		return true;
 	}
 	
+	public FtpDataConnection getFtpDataConnection() {
+		return dataConn;
+	}
 	
-	/*
-	 * Make DataSocket, and return DataSocket.
-	 * if it is existed, return null;
-	 */
-	public Socket getDataSocket() {
-		// TODO check passive mode
-
-		System.out.println(dataClientPort);
-		if (dataClientPort != NOT_EXIST_CONNECTED_SOCKET) { // Port is set
-
-			try {
-				System.out.println(dataClientAddress + ' '
-						+ dataClientPort.toString());
-				dataClientSocket = new Socket(dataClientAddress, dataClientPort);
-			} catch (IOException e) {
-				System.err.println("getDataSocket() : return Null");
-				return null;
-			}
-
-			return dataClientSocket;
-		}
-		
-		return null;
-	}
-	/**
-	 * set DataSocketPort
-	 * @param Integer port
-	 */
-	public void setDataClientPort(Integer port) {
-		dataClientPort = port;
-	}
-
-	/*
-	 * get DataSocketPort
-	 */
-	public int getDataClientPort() {
-		return dataClientPort.intValue();
-	}
-
-	public void setDataClientAddress(String address) {
-		dataClientAddress = address;
-	}
-
-	public String getDataClientAddress() {
-		return dataClientAddress;
-	}
-
 	public String getRootPath() {
 		return ROOTPATH;
 	}
@@ -192,7 +143,7 @@ public class FtpConnection implements Runnable {
 	
 	public void connectionClose() {
 		running = false;
-		dataSocketClose();
+		dataConn.disconnect();
 		
 		try { 
 			controlConnOutstream.close();
@@ -204,13 +155,7 @@ public class FtpConnection implements Runnable {
 				System.err.println("FtpConnection ERROR : Unable to close controlConnection");
 		}
 	}
-
-	public void dataSocketClose() {
-		dataClientSocket = null;
-		dataClientAddress = "";
-		dataClientPort = NOT_EXIST_CONNECTED_SOCKET;
-	}
-
+	
 	public void printReceviceMessage(String str) {
 		System.out.println(str);
 	}

@@ -5,30 +5,22 @@ import kr.ac.hongik.nas.ftpserver.FtpConnection;
 
 import java.net.Socket;
 import java.io.*;
-
+import kr.ac.hongik.nas.ftpserver.FtpDataConnection;
 public class LIST extends COMM{
 
 	public void excute(FtpConnection conn, String in) { // TODO add Exception 
 		
-		Socket dataSocket = conn.getDataSocket();
-		OutputStreamWriter dataOutFlow = null;
+		FtpDataConnection dataConn = conn.getFtpDataConnection();
+		//OutputStreamWriter dataOutFlow = null;
 		//BufferedReader dataInFlow;
 		String path, out="";
-		if( dataSocket == null ) {
+		if( !dataConn.isConnected() ) {
 			System.err.println("Data Socket is NULL");
 			conn.controlConnOutput("425 Can't open data Connection");
 			return;
 		}
 		conn.controlConnOutput("150 data connection for LIST Command");
 		
-		try {
-			dataOutFlow = new OutputStreamWriter(
-					dataSocket.getOutputStream());
-		} catch (Exception e) {
-			System.err.println("DataConnectionStream ERROR");
-			conn.controlConnOutput("425 Can't open data Connection");
-			return;
-		}
 		path = conn.getRootPath()+conn.getCurrentPath();
 		try { 
 			File dir = new File(path);
@@ -39,24 +31,11 @@ public class LIST extends COMM{
 			}
 		}catch(Exception e){
 		}
-		try { 
-			dataOutFlow.write(out, 0, out.length() );
-			//dataOutFlow.flush();
-			dataOutFlow.close();
-		}catch(Exception e) {
-			
-		}
-		conn.dataSocketClose();
+		
+		dataConn.dataConnOutput(out);
+		dataConn.disconnect();
 		
 		conn.controlConnOutput("226 LIST transfer complete");
 	}
 	
-	/*public void controlConnOutput(String out) {
-		try {
-			dataOutFlow.println(out);
-			//System.out.println("Send to Cient -> " + out);
-		} catch (Exception e) {
-			//System.out.println("Error printing to outflow");
-		}
-	}*/
 }

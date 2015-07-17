@@ -5,6 +5,7 @@ import java.util.StringTokenizer;
 import kr.ac.hongik.nas.ftpserver.command.*;
 import kr.ac.hongik.nas.ftpserver.exception.CommandSyntaxException;
 import kr.ac.hongik.nas.ftpserver.FtpConnection;
+import kr.ac.hongik.nas.ftpserver.FtpDataConnection;
 
 public class PORT extends COMM {
 
@@ -14,6 +15,7 @@ public class PORT extends COMM {
 		String ipAddress="";
 		Integer port=0;
 		int countToken=0;
+		FtpDataConnection dataConn;
 		
 		// ip 4 times
 		for(int i=0;i<4 && st.hasMoreTokens();i++) {
@@ -30,9 +32,13 @@ public class PORT extends COMM {
 		if( countToken != 6 || (port.intValue() < 0 || port.intValue() > 65536))
 			throw new CommandSyntaxException() ; // port number too low or too high 
 		
-		conn.setDataClientAddress(ipAddress);
-		conn.setDataClientPort(port);
+		dataConn = conn.getFtpDataConnection();
 		
-		conn.controlConnOutput("200 Port Setting Complete");
+		try {
+			dataConn.setDataConnection(ipAddress, port);
+			conn.controlConnOutput("200 Port Setting Complete");
+		} catch(Exception e){
+			throw new CommandSyntaxException();
+		}
 	}
 }
