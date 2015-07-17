@@ -1,4 +1,4 @@
-package kr.ac.hongik.nas.ftpserver.util.test;
+package kr.ac.hongik.nas.ftpserver.util;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
