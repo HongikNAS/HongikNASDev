@@ -38,7 +38,7 @@ public class FtpCommand {
 		if( st.hasMoreTokens() ) { // multithread enviroment (is it ok?) 
 			funcName = st.nextToken();
 			while( st.hasMoreTokens() )
-				inData += st.nextToken();
+				inData += st.nextToken() + " ";
 		}
 		// Should check login Option
 		

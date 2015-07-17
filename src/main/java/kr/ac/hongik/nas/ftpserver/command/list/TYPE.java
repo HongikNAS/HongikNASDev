@@ -28,18 +28,19 @@ public class TYPE extends COMM {
 			
 			throw new CommandSyntaxException();
 		}
-		else if( typeCharater == "I" ) { 
+		else if( typeCharater.equalsIgnoreCase("I")) { 
 			
 			dataConn.setModeBinary(true);
 		}
-		else if(typeCharater == "A") { 
+		else if(typeCharater.equalsIgnoreCase("A")) { 
 			
 			dataConn.setModeASCII(true);
-			if( secondCharacterType == "" ) { 
+			if( secondCharacterType.equals("") ) { 
 				throw new CommandSyntaxException();
 			}
 		}
 		else {
+			throw new CommandSyntaxException();
 		}
 		conn.controlConnOutput("200 TYPE request complete");
 	}
