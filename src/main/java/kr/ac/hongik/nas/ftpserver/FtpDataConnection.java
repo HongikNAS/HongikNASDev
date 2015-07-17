@@ -230,9 +230,11 @@ public class FtpDataConnection {
 	 * disconnect dataSocket
 	 */
 	public void disconnect() {
-		isConnected = false;
 		dataSocketAddress = SOCKET_ADDRESS_NOT_EXSIT;
 		dataSocketPort = SOCKET_PORT_NOT_EXSIT;
+		if( !isConnected )
+			return;
+		
 		try {
 			//dataConnInstream.close();
 			if( dataMode == BINARY_MODE ) {
@@ -246,5 +248,6 @@ public class FtpDataConnection {
 				System.err
 						.println("FtpDataConnection ERROR : DataSocket Close Not Properly");
 		}
+		isConnected = false;
 	}
 }

@@ -24,6 +24,7 @@ public class FtpCommand {
 		CommandList.put("PORT", new PORT());
 		CommandList.put("LIST", new LIST());
 		CommandList.put("PWD", new PWD());
+		CommandList.put("TYPE", new TYPE());
 		CommandList.put("UNKNOWN", new Unknown());
 	}
 
@@ -36,8 +37,8 @@ public class FtpCommand {
 		
 		if( st.hasMoreTokens() ) { // multithread enviroment (is it ok?) 
 			funcName = st.nextToken();
-			if( st.hasMoreTokens() )
-				inData = st.nextToken();
+			while( st.hasMoreTokens() )
+				inData += st.nextToken();
 		}
 		// Should check login Option
 		
